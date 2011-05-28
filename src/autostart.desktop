@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=PyMouseVooDoo
+GenericName=Mouse Gird Tool
+Exec=/usr/local/bin/mouse.py
+Terminal=false
+Type=Application
