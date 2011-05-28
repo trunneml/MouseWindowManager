@@ -1,0 +1,31 @@
+GridMouseVooDoo
+===============
+
+This program makes it possible to move and resize windows into a gird structure.
+It makes nearly the same as the compiz-grid-plugin, but only with the mouse and
+without a keyboard interaction.
+
+
+Usage
+-----
+
+Press the defined mouse button to mark the grid zones. The window will resized
+and moved to fit the marked zones when you release the button.
+
+The default layout looks like this:
+
+    +--+-+-+--+
+    |  | | |  |
+    +--+-+-+--+
+    |  | | |  |
+    +--+-+-+--+
+
+    
+Requirements
+------------
+
+ * xprop
+ * wmctrl
+ 
+And a EWMH/NetWM compatible X Window Manager (Normally the most Linux Window
+Manager).
