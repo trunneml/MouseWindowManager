@@ -27,8 +27,5 @@ The default layout looks like this:
 Requirements
 ------------
 
- * xprop
- * wmctrl
- 
-And a EWMH/NetWM compatible X Window Manager (Normally the most Linux Window
-Manager).
+wmctrl and a EWMH/NetWM compatible X Window Manager (Normally the most Window
+Manager under Linux).

@@ -95,15 +95,6 @@ class WindowManager(object):
         return win_list
 
 
-    def get_active_window(self):
-        """ Get the active window """
-        # This function is from stiler (https://github.com/soulfx/stiler)
-        cmd = "xprop -root _NET_ACTIVE_WINDOW | cut -d' ' -f5 | cut -d',' -f1"
-        active = subprocess.check_output(cmd, shell=True).strip()
-        logger.debug("obtained active window: '"+str(active)+"'")
-        return active
-    
-    
     def move_window_to_area(self, area):
         posx = max(filter(lambda x: x < area.x1, self.grid[0]))
         posy = max(filter(lambda x: x < area.y1, self.grid[1]))
