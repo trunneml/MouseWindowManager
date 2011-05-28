@@ -81,6 +81,7 @@ class WindowManager(object):
         self.metacity = metacity
         self.max = True
 
+
     def windows(self):
         # This function is from stiler (https://github.com/soulfx/stiler)
         win_output = subprocess.check_output("wmctrl -lG", shell=True)
@@ -180,7 +181,9 @@ class WindowManager(object):
     def _call(self, cmd):
         logger.info("Calling OS-CMD: %s" % cmd)
         return subprocess.call(cmd, shell=True)
-    
+
+
+
 class Area(object):
     
     def __init__(self, x, y):
@@ -188,20 +191,23 @@ class Area(object):
         self.x2 = x
         self.y1 = y
         self.y2 = y
-    
+
+   
     def add_point(self, x, y):
         self.x1 = min(x, self.x1)
         self.x2 = max(x , self.x2)
         self.y1 = min(y, self.y1)
         self.y2 = max(y, self.y2)    
 
-    
+
     def __str__(self):
         return "Area: (%d, %d - %d, %d)" % (self.x1, self.y1,
                                         self.x2, self.y2)
-    
+
+
     def __repr__(self):
         return self.__str__()
+
 
 class GridMouseVooDoo(Thread):
     
@@ -228,6 +234,7 @@ class GridMouseVooDoo(Thread):
         
         self.wm = wm
         self.area = None
+
 
     def run(self):
         logger.info("Starting Thread")
