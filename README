@@ -11,9 +11,8 @@ Usage
 
 1. Define your mouse button in mouse.py.
 2. Start mouse.py for the command line or create an autostart entry.
-3. After that just press the defined mouse button to mark the grid zones.
-   The window will resized and moved to fit the marked zones,
-   when you release the button.
+3. Just press the defined mouse button to mark the grid zones.
+4. The window will be resized and moved to fit the marked zones.
 
 The default layout looks like this:
 
@@ -27,5 +26,5 @@ The default layout looks like this:
 Requirements
 ------------
 
-wmctrl and a EWMH/NetWM compatible X Window Manager (Normally the most Window
-Manager under Linux).
+wmctrl and a EWMH/NetWM compatible X Window Manager (Normally most window
+managers under Linux).
