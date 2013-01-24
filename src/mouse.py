@@ -32,7 +32,6 @@ from Xlib.protocol import rq
 from Xlib import X
 
 import subprocess
-
 import logging
 
 logger = logging.getLogger('GMVD')
@@ -42,7 +41,6 @@ ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(name)s(%(levelname)s): %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
 
 class WindowManager(object):
     def __init__(self, grid, border_padding, metacity=True):
@@ -209,11 +207,9 @@ class Area(object):
 
 class GridMouseVooDoo(Thread):
 
-    def __init__(self, wm, button=10, daemon=True):
+    def __init__(self, wm, button=10):
         Thread.__init__(self)
 
-        # Set the Thread.daemon flag
-        self.daemon = daemon
         self.button = button
 
         self.display = Display()
@@ -294,5 +290,5 @@ import time
 time.sleep(15)
 wm = WindowManager(([0, 0.33, 0.5, 0.67, 1], [0, 0.5, 1]), (32, 1, 1, 1))
 button = 13
-gmvd = GridMouseVooDoo(wm, button, False)
+gmvd = GridMouseVooDoo(wm, button)
 gmvd.start()
