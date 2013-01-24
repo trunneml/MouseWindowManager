@@ -36,7 +36,7 @@ import subprocess
 import logging
 
 logger = logging.getLogger('GMVD')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(name)s(%(levelname)s): %(message)s')
@@ -45,11 +45,38 @@ logger.addHandler(ch)
 
 
 class WindowManager(object):
-    # Most of that functions are from stiler (https://github.com/soulfx/stiler)
-    def __init__(self, (xgrid, ygrid), (top, bottom, left, right),
-                 metacity=True):
+    def __init__(self, grid, border_padding, metacity=True):
+        self.metacity = metacity
+        self.max = True
+        self.set_border_padding(*border_padding)
+
+        # This var holds the grid as floating point values
+        # It is used to reinit the grid, when the workspaces have different
+        # sizes
+        self._grid = grid
+
+        self.init_desktop()
+
+
+    def set_border_padding(self, top, left, right, bottom):
+        self.border = (top + bottom, left + right)
+
+
+    def init_grid(self):
+        def grid_line(grid, size, offset):
+            return int(round(grid * size) + offset)
+
+        self.grid = (map(lambda x: grid_line(x, self.size[0], self.offset[0]),
+                         self._grid[0]),
+                     map(lambda y: grid_line(y, self.size[1], self.offset[1]),
+                         self._grid[1]))
+        logger.info("x-Grid is %s" % self.grid[0])
+        logger.info("y-Grid is %s" % self.grid[1])
+
+
+    def init_desktop(self):
         """
-        Collecting informations of desktops and windows
+        Collecting informations of the current desktop
         """
         # This function is from stiler (https://github.com/soulfx/stiler)
         desk_output = subprocess.check_output("wmctrl -d", shell=True)
@@ -67,35 +94,19 @@ class WindowManager(object):
         orig_x = int(current[7].split(",")[0])
         orig_y = int(current[7].split(",")[1])
         self.offset = (orig_x, orig_y)
-        self.border = (top + bottom, left + right)
+
+        self.viewport = (int(current[5].split(",")[0]),
+                         int(current[5].split(",")[1]))
 
         logger.info("Desktop dimensions are: (%d, %d)  (%d, %d)" % (orig_x,
                                                                     orig_y,
                                                                     width,
                                                                     height))
-        self.grid = (map(lambda x: int(round(x * width)), xgrid),
-                     map(lambda y: int(round(y * height)), ygrid))
-
-        logger.info("x-Grid is %s" % self.grid[0])
-        logger.info("y-Grid is %s" % self.grid[1])
-        self.metacity = metacity
-        self.max = True
-
-
-    def windows(self):
-        # This function is from stiler (https://github.com/soulfx/stiler)
-        win_output = subprocess.check_output("wmctrl -lG", shell=True)
-        win_output = win_output.strip().split("\n")
-        win_list = {}
-
-        for desk in self.desk_list:
-            win_list[desk] = map(lambda y: hex(int(y.split()[0], 16)),
-                                filter(lambda x: x.split()[1] == desk,
-                                       win_output))
-        return win_list
+        self.init_grid()
 
 
     def move_window_to_area(self, area):
+        self.init_desktop()
         try:
             posx = max(filter(lambda x: x < area.x1, self.grid[0]))
             posy = max(filter(lambda x: x < area.y1, self.grid[1]))
@@ -103,8 +114,10 @@ class WindowManager(object):
             h = min(filter(lambda x: x > area.y2, self.grid[1])) - posy
             logger.info("Moving window to %d, %d, %d, %d" % (posx, posy, w, h))
             self.move_window(":ACTIVE:", posx, posy, w, h)
-        except Exception as e:
-            print e
+        except ValueError:
+            logger.warning("Mouse area is out of the defined grid layout")
+        except Exception:
+            logger.exception("Something stupid happens")
 
 
     def move_window(self, windowid, x, y, w, h):
@@ -112,8 +125,8 @@ class WindowManager(object):
         Resizes and moves the given window to the given position and dimensions
         """
         # This function is from stiler (https://github.com/soulfx/stiler)
-        x = int(x) + self.offset[0]
-        y = int(y) + self.offset[1]
+        x = int(x) + self.viewport[0]
+        y = int(y) + self.viewport[1]
 
         max_h, max_v = False, False
         if self.max:
@@ -139,41 +152,33 @@ class WindowManager(object):
             window = "-i -r " + windowid
 
         # unmaximize
-        cmd = "wmctrl " + window + " -b remove,maximized_vert,maximized_horz"
-        self._call(cmd)
+        self._call("wmctrl %s -b remove,maximized_vert,maximized_horz" % window)
 
         # NOTE: metacity doesn't like resizing and moving in the same step    
         if self.metacity:
             # resize
-            cmd = "wmctrl %s -e 0,-1,-1,%i,%i" % (window, w, h)
-            self._call(cmd)
-            # move    
-            cmd = "wmctrl %s -e 0,%i,%i,-1,-1" % (window, max(x, 0), max(y, 0))
-            self._call(cmd)
+            self._call("wmctrl %s -e 0,-1,-1,%i,%i" % (window, w, h))
+            # move
+            self._call("wmctrl %s -e 0,%i,%i,-1,-1" % (window, max(x, 0),
+                                                       max(y, 0)))
         else:
-            cmd = "wmctrl %s -e 0,%i,%i,%i,%i" % (window,
-                                                  max(x, 0), max(y, 0),
-                                                  w, h)
+            self._call("wmctrl %s -e 0,%i,%i,%i,%i" % (window,
+                                                       max(x, 0), max(y, 0),
+                                                       w, h))
 
 
         if max_h:
-            cmd = "wmctrl %s -b add,maximized_horz" % window
-            self._call(cmd)
+            self._call("wmctrl %s -b add,maximized_horz" % window)
         if max_v:
-            cmd = "wmctrl %s -b add,maximized_vert" % window
-            self._call(cmd)
+            self._call("wmctrl %s -b add,maximized_vert" % window)
 
         # set properties
         command = "wmctrl " + window + " -b remove,hidden,shaded"
         self._call(command)
 
 
-    def get_mouse_on_desktop(self, x, y):
-        return (x - self.offset[0], y - self.offset[1])
-
-
     def _call(self, cmd):
-        logger.info("Calling OS-CMD: %s" % cmd)
+        logger.debug("Calling OS-CMD: %s" % cmd)
         return subprocess.call(cmd, shell=True)
 
 
@@ -185,12 +190,14 @@ class Area(object):
         self.x2 = x
         self.y1 = y
         self.y2 = y
+        logger.debug(self)
 
     def add_point(self, x, y):
         self.x1 = min(x, self.x1)
         self.x2 = max(x , self.x2)
         self.y1 = min(y, self.y1)
         self.y2 = max(y, self.y2)
+        logger.debug(self)
 
     def __str__(self):
         return "Area: (%d, %d - %d, %d)" % (self.x1, self.y1,
@@ -204,7 +211,7 @@ class GridMouseVooDoo(Thread):
 
     def __init__(self, wm, button=10, daemon=True):
         Thread.__init__(self)
-        
+
         # Set the Thread.daemon flag
         self.daemon = daemon
         self.button = button
@@ -274,7 +281,6 @@ class GridMouseVooDoo(Thread):
 
 
     def move(self, x, y):
-        x, y = wm.get_mouse_on_desktop(x, y)
         if not self.area:
             logger.debug("Mouse moved to %d, %d but not button not pressed" %
                          (x, y))
@@ -283,6 +289,7 @@ class GridMouseVooDoo(Thread):
         logger.debug("Mouse moved to %d, %d" % (x, y))
 
 
+logger.info("Waiting 15 sec for window manager setup")
 import time
 time.sleep(15)
 wm = WindowManager(([0, 0.33, 0.5, 0.67, 1], [0, 0.5, 1]), (32, 1, 1, 1))
