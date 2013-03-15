@@ -35,7 +35,7 @@ import subprocess
 import logging
 
 logger = logging.getLogger('GMVD')
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(name)s(%(levelname)s): %(message)s')
@@ -43,30 +43,55 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-class WindowManager(object):
-    def __init__(self, grid, border_padding, metacity=True):
-        self.metacity = metacity
-        self.max = True
-        self.set_border_padding(*border_padding)
-        # This var holds the grid as floating point values
-        # It is used to reinit the grid, when the workspaces have different
-        # sizes
+# This var holds the grid as floating point values
+# It is used to reinit the grid, when the workspaces have different
+# sizes
+DEFAULT_GRID = ([0, 0.33, 0.5, 0.67, 1], [0, 0.5, 1])
+
+
+class Monitor(object):
+
+    def __init__(self, x, y, width, height, grid=DEFAULT_GRID):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
         self._grid = grid
+        self._init_grid()
+
+    def _init_grid(self):
+        def grid_line(grid, size, offset):
+            return int(round(grid * size) + offset)
+        x_grid = [grid_line(x, self.width, self.x) \
+                  for x in self._grid[0]]
+        y_grid = [grid_line(y, self.height, self.y) \
+                  for y in self._grid[1]]
+        self.grid = (x_grid, y_grid)
+        logger.info("x-Grid is %s" % self.grid[0])
+        logger.info("y-Grid is %s" % self.grid[1])
+
+    def filter_monitor(self, area):
+        if area.x1 < self.x:
+            return False
+        if area.x2 > self.x + self.width:
+            return False
+        if area.y1 < self.y:
+            return False
+        if area.y2 > self.y + self.height:
+            return False
+        return True
+
+
+class WindowManager(object):
+    def __init__(self, border_padding, monitors=None, metacity=True):
+        self.metacity = metacity
+        self.max = False
+        self.set_border_padding(*border_padding)
+        self.monitors = monitors
         self.init_desktop()
 
     def set_border_padding(self, top, left, right, bottom):
         self.border = (top + bottom, left + right)
-
-    def init_grid(self):
-        def grid_line(grid, size, offset):
-            return int(round(grid * size) + offset)
-
-        self.grid = (map(lambda x: grid_line(x, self.size[0], self.offset[0]),
-                         self._grid[0]),
-                     map(lambda y: grid_line(y, self.size[1], self.offset[1]),
-                         self._grid[1]))
-        logger.info("x-Grid is %s" % self.grid[0])
-        logger.info("y-Grid is %s" % self.grid[1])
 
     def init_desktop(self):
         """
@@ -81,30 +106,30 @@ class WindowManager(object):
 
         self.desktop = int(current[0])
 
-        width = int(current[8].split("x")[0])
-        height = int(current[8].split("x")[1])
-        self.size = (width, height)
-
-        orig_x = int(current[7].split(",")[0])
-        orig_y = int(current[7].split(",")[1])
-        self.offset = (orig_x, orig_y)
-
         self.viewport = (int(current[5].split(",")[0]),
                          int(current[5].split(",")[1]))
 
-        logger.info("Desktop dimensions are: (%d, %d)  (%d, %d)" % (orig_x,
-                                                                    orig_y,
-                                                                    width,
-                                                                    height))
-        self.init_grid()
+        if not self.monitors:
+            width = int(current[8].split("x")[0])
+            height = int(current[8].split("x")[1])
+            orig_x = int(current[7].split(",")[0])
+            orig_y = int(current[7].split(",")[1])
+            self.monitors = [Monitor(orig_x, orig_y, width, height)]
 
     def move_window_to_area(self, area):
         self.init_desktop()
+        monitors = [m for m in self.monitors if m.filter_monitor(area)]
+        if len(monitors) < 1:
+            logger.warning("No monitor for are found")
+            return
+        if len(monitors) > 1:
+            logger.warning("Area is over multiple monitors")
+        monitor = monitors[0]
         try:
-            posx = max(filter(lambda x: x < area.x1, self.grid[0]))
-            posy = max(filter(lambda x: x < area.y1, self.grid[1]))
-            w = min(filter(lambda x: x > area.x2, self.grid[0])) - posx
-            h = min(filter(lambda x: x > area.y2, self.grid[1])) - posy
+            posx = max(filter(lambda x: x < area.x1, monitor.grid[0]))
+            posy = max(filter(lambda x: x < area.y1, monitor.grid[1]))
+            w = min(filter(lambda x: x > area.x2, monitor.grid[0])) - posx
+            h = min(filter(lambda x: x > area.y2, monitor.grid[1])) - posy
             logger.info("Moving window to %d, %d, %d, %d" % (posx, posy, w, h))
             self.move_window(":ACTIVE:", posx, posy, w, h)
         except ValueError:
@@ -144,7 +169,7 @@ class WindowManager(object):
             window = "-i -r " + windowid
 
         # unmaximize
-        self._call("wmctrl %s -b remove,maximized_vert,maximized_horz" 
+        self._call("wmctrl %s -b remove,maximized_vert,maximized_horz"
                    % window)
 
         # NOTE: metacity doesn't like resizing and moving in the same step
@@ -274,7 +299,10 @@ class GridMouseVooDoo(Thread):
 logger.info("Waiting 15 sec for window manager setup")
 import time
 time.sleep(15)
-wm = WindowManager(([0, 0.33, 0.5, 0.67, 1], [0, 0.5, 1]), (32, 1, 1, 1))
+monitor1 = Monitor(0, 0, 1080, 1920, grid=([0.0, 0.5, 1.0],
+                                           [0.0, 0.33, 0.5, 0.67, 1.0]))
+monitor2 = Monitor(1080, 245, 1920, 1200, grid=DEFAULT_GRID)
+wm = WindowManager((32, 1, 1, 1), monitors=[monitor1, monitor2])
 button = 13
 gmvd = GridMouseVooDoo(wm, button)
 gmvd.start()
