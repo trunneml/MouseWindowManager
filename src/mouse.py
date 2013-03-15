@@ -263,7 +263,7 @@ class GridMouseVooDoo(Thread):
 
     def move(self, x, y):
         if not self.area:
-            logger.debug("Mouse moved to %d, %d but not button not pressed" %
+            logger.debug("Mouse moved to %d, %d but no button pressed" %
                          (x, y))
             return
         self.area.add_point(x, y)
