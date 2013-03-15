@@ -77,7 +77,7 @@ class WindowManager(object):
         desk_output = desk_output.strip().split('\n')
         self.desk_list = [line.split()[0] for line in desk_output]
 
-        current = filter(lambda x: x.split()[1] == "*" , desk_output)[0].split()
+        current = filter(lambda x: x.split()[1] == "*", desk_output)[0].split()
 
         self.desktop = int(current[0])
 
@@ -144,7 +144,8 @@ class WindowManager(object):
             window = "-i -r " + windowid
 
         # unmaximize
-        self._call("wmctrl %s -b remove,maximized_vert,maximized_horz" % window)
+        self._call("wmctrl %s -b remove,maximized_vert,maximized_horz" 
+                   % window)
 
         # NOTE: metacity doesn't like resizing and moving in the same step
         if self.metacity:
