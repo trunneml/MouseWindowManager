@@ -42,23 +42,20 @@ formatter = logging.Formatter('%(name)s(%(levelname)s): %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+
 class WindowManager(object):
     def __init__(self, grid, border_padding, metacity=True):
         self.metacity = metacity
         self.max = True
         self.set_border_padding(*border_padding)
-
         # This var holds the grid as floating point values
         # It is used to reinit the grid, when the workspaces have different
         # sizes
         self._grid = grid
-
         self.init_desktop()
-
 
     def set_border_padding(self, top, left, right, bottom):
         self.border = (top + bottom, left + right)
-
 
     def init_grid(self):
         def grid_line(grid, size, offset):
@@ -70,7 +67,6 @@ class WindowManager(object):
                          self._grid[1]))
         logger.info("x-Grid is %s" % self.grid[0])
         logger.info("y-Grid is %s" % self.grid[1])
-
 
     def init_desktop(self):
         """
@@ -102,7 +98,6 @@ class WindowManager(object):
                                                                     height))
         self.init_grid()
 
-
     def move_window_to_area(self, area):
         self.init_desktop()
         try:
@@ -116,7 +111,6 @@ class WindowManager(object):
             logger.warning("Mouse area is out of the defined grid layout")
         except Exception:
             logger.exception("Something stupid happens")
-
 
     def move_window(self, windowid, x, y, w, h):
         """
@@ -152,7 +146,7 @@ class WindowManager(object):
         # unmaximize
         self._call("wmctrl %s -b remove,maximized_vert,maximized_horz" % window)
 
-        # NOTE: metacity doesn't like resizing and moving in the same step    
+        # NOTE: metacity doesn't like resizing and moving in the same step
         if self.metacity:
             # resize
             self._call("wmctrl %s -e 0,-1,-1,%i,%i" % (window, w, h))
@@ -164,7 +158,6 @@ class WindowManager(object):
                                                        max(x, 0), max(y, 0),
                                                        w, h))
 
-
         if max_h:
             self._call("wmctrl %s -b add,maximized_horz" % window)
         if max_v:
@@ -174,11 +167,9 @@ class WindowManager(object):
         command = "wmctrl " + window + " -b remove,hidden,shaded"
         self._call(command)
 
-
     def _call(self, cmd):
         logger.debug("Calling OS-CMD: %s" % cmd)
         return subprocess.call(cmd, shell=True)
-
 
 
 class Area(object):
@@ -192,7 +183,7 @@ class Area(object):
 
     def add_point(self, x, y):
         self.x1 = min(x, self.x1)
-        self.x2 = max(x , self.x2)
+        self.x2 = max(x, self.x2)
         self.y1 = min(y, self.y1)
         self.y2 = max(y, self.y2)
         logger.debug(self)
@@ -231,12 +222,10 @@ class GridMouseVooDoo(Thread):
         self.wm = wm
         self.area = None
 
-
     def run(self):
         logger.info("Starting Thread")
         self.display.record_enable_context(self.ctx, self.handler)
         self.display.record_free_context(self.ctx)
-
 
     def handler(self, reply):
         logger.debug("Handler called")
@@ -253,7 +242,6 @@ class GridMouseVooDoo(Thread):
             else:
                 self.move(event.root_x, event.root_y)
 
-
     def stop(self):
         logger.info("Stopping Thread")
         self.display.record_disable_context(self.ctx)
@@ -261,12 +249,10 @@ class GridMouseVooDoo(Thread):
         self.display.flush()
         logger.debug("Thread stopped")
 
-
     def press(self, x, y):
         self.area = Area(x, y)
         logger.info("Mouse button pressed")
         self.move(x, y)
-
 
     def release(self, x, y):
         self.move(x, y)
@@ -274,7 +260,6 @@ class GridMouseVooDoo(Thread):
         self.wm.move_window_to_area(self.area)
         self.area = None
         logger.info("Mouse button released")
-
 
     def move(self, x, y):
         if not self.area:
