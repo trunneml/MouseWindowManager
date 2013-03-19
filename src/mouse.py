@@ -83,9 +83,10 @@ class Monitor(object):
 
 
 class WindowManager(object):
-    def __init__(self, border_padding, monitors=None, metacity=True):
+    def __init__(self, border_padding, monitors=None, metacity=True,
+                 maximize=True):
         self.metacity = metacity
-        self.max = False
+        self.max = maximize
         self.set_border_padding(*border_padding)
         self.monitors = monitors
         self.init_desktop()
@@ -131,26 +132,21 @@ class WindowManager(object):
             w = min(filter(lambda x: x > area.x2, monitor.grid[0])) - posx
             h = min(filter(lambda x: x > area.y2, monitor.grid[1])) - posy
             logger.info("Moving window to %d, %d, %d, %d" % (posx, posy, w, h))
-            self.move_window(":ACTIVE:", posx, posy, w, h)
+            max_h = w == monitor.width and self.max
+            max_v = h == monitor.height and self.max
+            self.move_window(":ACTIVE:", posx, posy, w, h, max_h, max_v)
         except ValueError:
             logger.warning("Mouse area is out of the defined grid layout")
         except Exception:
             logger.exception("Something stupid happens")
 
-    def move_window(self, windowid, x, y, w, h):
+    def move_window(self, windowid, x, y, w, h, max_h, max_v):
         """
         Resizes and moves the given window to the given position and dimensions
         """
         # This function is from stiler (https://github.com/soulfx/stiler)
         x = int(x) + self.viewport[0]
         y = int(y) + self.viewport[1]
-
-        max_h, max_v = False, False
-        if self.max:
-            if w == self.size[0]:
-                max_h = True
-            if h == self.size[1]:
-                max_v = True
 
         h = h - self.border[0]
         w = w - self.border[1]
