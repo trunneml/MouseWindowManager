@@ -1,30 +1,53 @@
-GridMouseVooDoo
-===============
-
-This program makes it possible to move and resize windows into a gird structure.
-It makes nearly the same as the compiz-grid-plugin, but only with the mouse and
-without a keyboard interaction.
+# MouseWindowManager
 
 
-Usage
------
+This program makes it possible to move and resize windows into a simple gird
+structure. It's easier to use then most tiling window managers.
 
-1. Define your mouse button in mouse.py.
-2. Start mouse.py for the command line or create an autostart entry.
-3. Just press the defined mouse button to mark the grid zones.
-4. The window will be resized and moved to fit the marked zones.
+It is inspired by the compiz-grid-plugin, but uses the mouse to
+resize and reposition the window.
 
-The default layout looks like this:
+## Usage
 
-    +--+-+-+--+
-    |  | | |  |
-    +--+-+-+--+
-    |  | | |  |
-    +--+-+-+--+
+Just press your hot key, normally one of the extra mouse buttons and draw a
+line, to mark the grid fields. The window will be repositioned and resized to 
+fit into the marked gird areas.
 
-    
-Requirements
-------------
+The grid splits you monitor like that:
 
-wmctrl and a EWMH/NetWM compatible X Window Manager (Normally most window
+
+          1/3 1/2 2/3
+    +------+---+---+------+
+    |      |   |   |      |
+    +------+---+---+------+   1/2
+    |      |   |   |      |
+    +------+---+---+------+
+
+
+
+
+## Linux Installation
+
+The Linux version is Python2 script and uses the command line tool wmctrl to
+control the windows.
+
+1. Install *wmctrl* and *python2*
+2. Define your mouse button in `linux/mouse.py`.
+3. Start mouse.py for the command line or use the autostart entry in 
+   the same folder.
+
+**Note**: You need a EWMH/NetWM compatible X Window Manager (Normally most window
 managers under Linux).
+
+## Windows
+
+The windows version is a autohot key script.
+
+1. Install AutoHotKey from: https://autohotkey.com/
+2. Define your hotkey in `windows/mwm.ahk` (see below).
+3. Start the AutoHotKey script (just double click).
+
+**Note:** For more information to define a hotkey see:
+
+- https://autohotkey.com/docs/Hotkeys.htm
+- https://autohotkey.com/docs/KeyList.htm

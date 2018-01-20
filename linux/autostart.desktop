@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=PyMouseVooDoo
-GenericName=Mouse Gird Tool
+Name=MouseWindowManager
+GenericName=Mouse Window Manager
 Exec=/usr/local/bin/mouse.py
 Terminal=false
 Type=Application
