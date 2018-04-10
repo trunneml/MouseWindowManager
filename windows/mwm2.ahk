@@ -4,19 +4,18 @@
 gridX := [0, 0.33, 0.5, 0.66, 1]
 gridY := [0, 0.5, 1]
 
-
 SetTimer,CheckIfAutoReloadNeeded,500
 GoSub, ResetIt
 Return
 
 
 ; Define your hotkey here and below!
-CapsLock::
+LWin & LButton::
 SetTimer, TrackIt, 50
 return
 
 ; Define your hotkey here and above!
-CapsLock Up::
+LWin & LButton Up::
 SetTimer, TrackIt, Off
 GoSub, MoveIt
 GoSub, ResetIt
@@ -30,7 +29,6 @@ minY := curY < minY ? curY : minY
 maxX := curX > maxX ? curX : maxX
 maxY := curY > maxY ? curY : maxY
 return
-
 
 MoveIt:
 SysGet, MonitorCount, MonitorCount
